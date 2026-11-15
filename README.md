@@ -15,6 +15,31 @@ detection and the call are identical either way.
 > on faster edge hardware (e.g. NVIDIA Jetson) for full player + ball tracking and
 > additional rule types. The prototype proves the concept on minimal hardware.
 
+## Try it in the browser
+
+**Live demo: https://clearcall-delta.vercel.app**
+
+You don't need a Raspberry Pi to try it. The `web/` folder re-implements the same
+pipeline in plain JavaScript on a canvas, and everything runs locally in the page:
+
+- **Demo mode** (no camera): a simulated ball moves around a court. Each frame is
+  rendered to pixels and the ball is found by color, just like with a real camera.
+- **Camera mode**: uses your webcam via `getUserMedia`. Video never leaves your device.
+- **Set the line**: click to drop a vertical line (like the Pi version), or drag to
+  draw one at any angle. Use *Flip OUT side* to choose which side is out.
+- **Calibrate**: press *Calibrate*, then click the ball to sample its color. This
+  does the same job as `calibrate.py`. Fine-tune the HSV range with sliders.
+- **Show what the computer sees**: toggle the color mask to see the thresholded frame.
+
+Pipeline per frame: RGB → HSV → `inRange` → erode/dilate → largest blob → center →
+which side of the line → **IN / OUT** call, with a short trail.
+
+To run it locally, serve the folder (the camera needs `localhost` or HTTPS):
+
+```bash
+cd web && python3 -m http.server 8000
+```
+
 ## How it works
 
 ```
