@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ClearCall · Boundary Calls in the Browser</title>
+  <meta name="description" content="ClearCall: an affordable automatic line-calling prototype. Track a ball by color and call it IN or OUT against a line you set, right in your browser.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='12' fill='%23ff7a1a'/%3E%3Cpath d='M22 2v28' stroke='%23fff' stroke-width='3'/%3E%3C/svg%3E">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"></span>
+      <div>
+        <h1>ClearCall</h1>
+        <p class="tag">Automatic boundary calls from one camera. This is the Raspberry Pi prototype, running in your browser.</p>
+      </div>
+    </div>
+    <a class="gh" href="https://github.com/VikramMenon09/ClearCall" target="_blank" rel="noopener">Source on GitHub</a>
+  </header>
+
+  <main class="layout">
+    <section class="stage-wrap">
+      <div class="modes" role="tablist" aria-label="Video source">
+        <button role="tab" id="tab-demo" aria-selected="true" class="mode active" data-mode="demo">Demo (no camera)</button>
+        <button role="tab" id="tab-cam" aria-selected="false" class="mode" data-mode="camera">Use my camera</button>
+      </div>
+
+      <div class="stage" id="stage">
+        <canvas id="view" width="640" height="480" aria-label="Video with ball tracking. Click to set a vertical boundary line, or drag to draw one at any angle."></canvas>
+        <div class="call" id="call" aria-live="polite"><span id="call-text">—</span></div>
+        <div class="hint" id="hint">Click to set the line · drag to draw it at an angle</div>
+        <div class="cam-gate" id="cam-gate" hidden>
+          <p>Point your camera at a solid-colored ball (orange works out of the box).</p>
+          <button class="btn primary" id="start-cam">Start camera</button>
+          <p class="small">Video never leaves your device. All processing happens locally in this page.</p>
+          <p class="small err" id="cam-err"></p>
+        </div>
+      </div>
+
+      <div class="readout" id="readout">
+        <span><b>Ball</b> <span id="r-ball">—</span></span>
+        <span><b>Blob</b> <span id="r-area">—</span></span>
+        <span><b>FPS</b> <span id="r-fps">—</span></span>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <div class="card">
+        <h2>Boundary line</h2>
+        <p class="muted">Click the video to drop a vertical line (same as the Pi version). Drag to draw one at any angle. The shaded side is OUT.</p>
+        <div class="row">
+          <button class="btn" id="flip">Flip OUT side</button>
+          <button class="btn" id="reset-line">Reset line</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Ball color</h2>
+        <p class="muted">Press <b>Calibrate</b>, then click the ball. ClearCall samples its color and sets the HSV range, the same job <code>calibrate.py</code> does.</p>
+        <div class="row">
+          <button class="btn primary" id="calibrate">Calibrate</button>
+          <span class="swatch" id="swatch" title="Sampled color"></span>
+          <span class="mono small" id="hsv-text">H 5–20 · S 120–255 · V 120–255</span>
+        </div>
+        <details>
+          <summary>Fine-tune HSV range</summary>
+          <div class="sliders" id="sliders"></div>
+        </details>
+        <div class="row demo-only">
+          <button class="btn" id="ball-color">Swap demo ball color</button>
+          <button class="btn" id="pause">Pause</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>View</h2>
+        <label class="check"><input type="checkbox" id="show-mask"> Show what the computer sees (color mask)</label>
+        <label class="check"><input type="checkbox" id="show-trail" checked> Show ball trail</label>
+      </div>
+
+      <div class="card">
+        <h2>Calls <span class="count" id="count">0</span></h2>
+        <ol class="log" id="log"><li class="muted empty">Waiting for the ball to cross the line…</li></ol>
+      </div>
+    </aside>
+  </main>
+
+  <section class="how">
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li><b>Threshold.</b> Each frame is converted from RGB to HSV, and pixels inside the ball's color range are kept (OpenCV's <code>inRange</code>).</li>
+      <li><b>Clean up.</b> One erode and one dilate pass remove specks and fill small holes in the mask.</li>
+      <li><b>Find the ball.</b> The largest connected blob above a minimum size is taken as the ball, and its center is tracked.</li>
+      <li><b>Make the call.</b> When the center crosses to the OUT side of the line, ClearCall calls it.</li>
+    </ol>
+    <p class="muted">The Pi prototype does this with Python and OpenCV and streams the result over WiFi. This page re-implements the same pipeline in plain JavaScript on a canvas, so it needs no server and no install. The full system swaps color tracking for a trained detection model running on edge hardware.</p>
+  </section>
+
+  <footer class="foot">ClearCall prototype · <a href="https://github.com/VikramMenon09/ClearCall" target="_blank" rel="noopener">GitHub</a></footer>
+
+  <video id="video" playsinline muted hidden></video>
+  <script src="app.js"></script>
+</body>
+</html>
