@@ -323,7 +323,6 @@
     callEl.classList.toggle("out", state.call === "OUT");
     callEl.classList.toggle("none", !state.call);
     callText.textContent = state.call || "NO BALL";
-    if (flash) { callEl.classList.remove("flash"); void callEl.offsetWidth; callEl.classList.add("flash"); }
   }
 
   function logCall(kind, note) {
@@ -570,10 +569,12 @@
   async function startCamera() {
     const err = $("cam-err");
     err.textContent = "";
+    const btn = $("start-cam");
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       err.textContent = "This browser can't open a camera here. It needs HTTPS and a modern browser.";
       return;
     }
+    btn.disabled = true; btn.classList.add("loading"); btn.textContent = "Starting camera";
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
@@ -588,6 +589,8 @@
       err.textContent = e && e.name === "NotAllowedError"
         ? "Camera permission was denied. Allow it in your browser's site settings, or try the Demo."
         : `Couldn't start the camera (${(e && e.name) || "error"}). Try the Demo instead.`;
+    } finally {
+      btn.disabled = false; btn.classList.remove("loading"); btn.textContent = "Start camera";
     }
   }
 
